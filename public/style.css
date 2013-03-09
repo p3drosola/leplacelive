@@ -1,0 +1,99 @@
+body, html {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+  font-size: 1em;
+  background: #d7d7d7;
+  overflow: hidden;
+}
+
+.photo-wrapper {
+  width: 60%;
+  height: 100%;
+  position: absolute;
+  left:0;
+  top: 0;
+  z-index: 0;
+  text-align: center;
+  overflow: none;
+}
+.photo-wrapper.only-text {
+  width: 0;
+}
+.photo-wrapper img {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.photo-wrapper img.unloaded {
+  position: fixed;
+  left: 100%;
+}
+
+.photo-wrapper img.horizontal {
+  width: 100%;
+}
+
+.photo-wrapper img.vertical {
+  height: 100%;
+}
+
+.text-wrapper {
+  height: 100%;
+  width: 40%;
+  position: absolute;
+  right:0;
+  top: 0;
+  text-align: center;
+  z-index: 1;
+  transition: width 500ms;
+  -moz-transition: width 500ms; /* Firefox 4 */
+  -webkit-transition: width 500ms; /* Safari and Chrome */
+  -o-transition: width 500ms; /* Opera */
+  background: url('logo.png') center bottom no-repeat;
+}
+
+.text-wrapper.only-text {
+  width: 100%;
+}
+
+.frame-wrapper {
+  position: relative;
+  margin-top: 56px;
+  height: 181px;
+}
+.frame-wrapper img {
+  position: absolute;
+  left: 50%;
+}
+
+.frame-wrapper .frame {
+  z-index: 10;
+  margin-left: -90px;
+}
+
+.frame-wrapper .avatar {
+  z-index: 9;
+  width: 112px;
+  height: 112px;
+  margin-left: -56px;
+  top: 32px;
+}
+
+.text-wrapper h2,
+.text-wrapper .time {
+  color: #7c7c7c;
+}
+
+.text-wrapper h2 {
+  font-size: 1.3em;
+  margin-bottom: .5em;
+}
+
+.tweet-text {
+  font-size: 1.4em;
+  padding: 2em;
+  font-family: 'Gentium Book Basic', serif;
+}

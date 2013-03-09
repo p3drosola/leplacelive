@@ -54,9 +54,10 @@ function handleTweet(data) {
   var client_data = {
     id: data.id,
     username: data.user.screen_name,
-    profile_image_url: data.user.profile_image_url,
+    profile_image_url: large_profile_img(data.user.profile_image_url),
     text: data.text,
-    photo_url: getPhotoUrl(data)
+    photo_url: getPhotoUrl(data),
+    time: data.created_at
   };
 
   Object.keys(clients).forEach(function (id) {
@@ -89,11 +90,16 @@ function prepareSeedData(data) {
     return {
       id: tweet.id,
       username: tweet.from_user,
-      profile_image_url: tweet.profile_image_url,
+      profile_image_url: large_profile_img(tweet.profile_image_url),
       text: tweet.text,
-      photo_url: getPhotoUrl(tweet)
+      photo_url: getPhotoUrl(tweet),
+      time: tweet.created_at
     };
   });
+}
+
+function large_profile_img(url) {
+  return url.replace('_normal.png', '.png');
 }
 
 app.get('/', function(req, res) {
