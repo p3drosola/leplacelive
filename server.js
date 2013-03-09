@@ -5,9 +5,11 @@ fs = require('fs');
 var twit, app = express(), clients = {}, port = process.env.PORT || 3000;
 
 var filter = {
-  'follow':'1254449029'
-  //'track' : 'barcelona'
-};
+  //'follow':'1254449029'
+  'track' : 'leplace,leplacebcn,leplacelive,srframes'
+},
+seed_search = "leplacebcn",
+seed_count = 15;
 
 twit = new twitter({
   consumer_key: 'Fcs3fjPDs7w5JcjxGtOMQ',
@@ -114,7 +116,7 @@ app.get('/stream', function(req, res) {
 });
 
 app.get('/seed', function (req, res) {
-  twit.search('photo', {include_entities: true}, function (err, data) {
+  twit.search(seed_search, {include_entities: true, count: seed_count}, function (err, data) {
     if (err) res.end(500);
     data = prepareSeedData(data);
     res.header('Content-Type', 'text/json');
