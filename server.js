@@ -4,6 +4,11 @@ fs = require('fs');
 
 var twit, app = express(), clients = {}, port = process.env.PORT || 3000;
 
+var filter = {
+  'follow':'1254449029'
+  //'track' : 'barcelona'
+};
+
 twit = new twitter({
   consumer_key: 'Fcs3fjPDs7w5JcjxGtOMQ',
   consumer_secret: 'NBQUvtoZeos6Y4T6mHXadr27S2vgCh98VJBqR7pAB4A',
@@ -11,18 +16,9 @@ twit = new twitter({
   access_token_secret: '6p9jWQvGEv5sCVstxoFZIqeOzS4S2bzvnbuhVy8HlU'
 });
 
-twit.stream('statuses/filter', {
-  //'follow' : 243508158,   // leplace
-  'follow' : 1169136006,    // TesterGator
-  'track' : 'leplace,leplacebcn'
-}, function(stream) {
-  stream.on('data', function (data) {
-    handleTweet(data);
-  });
-
-  stream.on('error', function(error, code) {
-    console.warn("error: " + error + ": " + code);
-  });
+twit.stream('statuses/filter', filter, function(stream) {
+  stream.on('data', handleTweet);
+  stream.on('error', handleError);
 });
 
 // configure express
@@ -41,7 +37,6 @@ app.configure('production', function(){
 });
 
 
-
 function bindStream (id, res) {
   clients[id] = res;
 }
@@ -54,10 +49,29 @@ function handleTweet(data) {
   console.log('@' + data.user.screen_name + ' (' + data.user.screen_name + ')');
   console.log(data.text);
 
+  var client_data = {
+    id: data.id,
+    username: data.user.screen_name,
+    profile_image_url: data.user.profile_image_url,
+    text: data.text,
+    photo_url: getPhotoUrl(data)
+  };
+
   Object.keys(clients).forEach(function (id) {
-    sendData(id, data.text);
+    sendData(id, client_data);
   });
 }
+
+function handleError(error, code) {
+  console.warn("error: " + error + ": " + code);
+}
+
+function getPhotoUrl(data) {
+  if (!data.entities.media || !data.entities.media.length) return null;
+  if (data.entities.media[0].type !== 'photo') return null;
+  return data.entities.media[0].media_url;
+}
+
 
 function sendData(id, data) {
   var res = clients[id];
@@ -65,30 +79,48 @@ function sendData(id, data) {
 
   res.write('id: ' + id + '\n');
   res.write('event: data\n');
-  res.write('data: ' + data.toString('utf8') + '\n\n');
+  res.write('data: ' + JSON.stringify(data).toString('utf8') + '\n\n');
+}
+
+function prepareSeedData(data) {
+  return data.results.map(function (tweet){
+    return {
+      id: tweet.id,
+      username: tweet.from_user,
+      profile_image_url: tweet.profile_image_url,
+      text: tweet.text,
+      photo_url: getPhotoUrl(tweet)
+    };
+  });
 }
 
 app.get('/', function(req, res) {
   res.redirect('/index.html');
 });
 
-app.get('/events', function(req, res) {
-
-
+app.get('/stream', function(req, res) {
   var id = (new Date()).getTime().toString();
-
-  console.log('connected to /events ');
+  console.log('client connected to /stream ');
 
   res.header('Content-Type', 'text/event-stream');
   res.header('Cache-Control', 'no-cache');
   res.header('Connection', 'keep-alive');
 
   bindStream(id, res);
-  console.log(Object.keys(clients));
+  console.log('clients:', Object.keys(clients));
   res.on('close', function() {
     unbindStream(id);
   });
 });
 
+app.get('/seed', function (req, res) {
+  twit.search('photo', {include_entities: true}, function (err, data) {
+    if (err) res.end(500);
+    data = prepareSeedData(data);
+    res.header('Content-Type', 'text/json');
+    res.send(JSON.stringify(data));
+  });
+});
+
 app.listen(port);
-console.log('running on port ' + port);
+console.log('LePlaceLive is running on port ' + port);
