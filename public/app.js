@@ -54,7 +54,7 @@
 
     $('.text-wrapper').children().fadeOut('normal', function () {
       $('.avatar').attr('src', tweet.profile_image_url);
-      $('h2.name').text(tweet.username);
+      $('h2.name').text('@' + tweet.username);
       $('.time').text(parseTwitterDate(tweet.time));
       $(".tweet-text").text(tweet.text);
 
@@ -115,6 +115,7 @@
 
   $(function () {
     live.loadSeedData(live.subscribe);
+    setTimeout(location.reload, 1000 * 60);
   });
 
 }());

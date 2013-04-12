@@ -5,7 +5,7 @@ fs = require('fs');
 var twit, app = express(), clients = {}, port = process.env.PORT || 3000;
 
 var filter = {
-  //'follow':'1254449029'
+  // 'follow' : '1254449029'
   'track' : 'leplace,leplacebcn,leplacelive,srframes'
 },
 seed_search = "leplacebcn",

@@ -18,6 +18,7 @@ body, html {
   z-index: 0;
   text-align: center;
   overflow: none;
+  background: #ccc;
 }
 .photo-wrapper.only-text {
   width: 0;
@@ -61,7 +62,7 @@ body, html {
 
 .frame-wrapper {
   position: relative;
-  margin-top: 56px;
+  margin-top: 150px;
   height: 181px;
 }
 .frame-wrapper img {
@@ -93,7 +94,19 @@ body, html {
 }
 
 .tweet-text {
-  font-size: 1.4em;
-  padding: 2em;
-  font-family: 'Gentium Book Basic', serif;
+  font-size: 2.2em;
+  padding: 2em 2em 1em 2em;
+  font-family: 'Inika', serif;
+}
+
+.sub-logo {
+  position: absolute;
+  bottom: 32px;
+  color: rgb(124, 124, 124);
+  font-size: 1.5em;
+  text-align: center;
+  width: 100%;
+}
+.sub-logo b{
+  color: #4D4D4D;
 }
