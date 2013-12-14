@@ -62,7 +62,8 @@
 
     live.active_tweet_id = tweet.id;
 
-    $('.text-wrapper').children().fadeOut('normal', function () {
+    $('.text-wrapper').children().fadeOut(300);
+    setTimeout(function () {
       $('.avatar').attr('src', tweet.profile_image_url);
       $('h2.name').text('@' + tweet.username);
       $('.time').text(parseTwitterDate(tweet.time));
@@ -78,7 +79,7 @@
       $('.text-wrapper, .photo-wrapper').toggleClass('only-text', !tweet.photo_url);
 
       $('.text-wrapper').children().fadeIn();
-    });
+    }, 300);
   };
 
   live.parseHashTags = function (text) {

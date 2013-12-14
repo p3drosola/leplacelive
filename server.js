@@ -6,8 +6,8 @@ var client = require('twitter-api').createClient(),
     app = express(),
     clients = {},
     port = process.env.PORT || 3000,
-    search = "leplace OR leplacebcb OR 57party",
-    track = 'leplace,leplacebcb,57party';
+    search = "#leplace OR #leplacebcb OR #57party",
+    track = '#leplace,#leplacebcb,#57party';
 
 client.setAuth(
   //consumer_key
