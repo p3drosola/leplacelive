@@ -13,12 +13,22 @@
       if (data.length) {
         live.next(live.tweets[0]);
         if (callback) callback();
+      } else {
+        var reload = confirm('There are no tweets to display. Reload?');
+        if (reload) {
+          window.location = window.location;
+        }
       }
+
     });
   };
 
   live.subscribe = function () {
     live.events = new EventSource("/stream");
+    live.events.onerror = function () {
+      console.log('failed to load stream. reloading...');
+      window.location = window.location;
+    };
     live.events.addEventListener('data', live.onTweet, false);
   };
 
@@ -115,7 +125,6 @@
 
   $(function () {
     live.loadSeedData(live.subscribe);
-    setTimeout(location.reload, 1000 * 60);
   });
 
 }());

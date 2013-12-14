@@ -1,25 +1,19 @@
 var client = require('twitter-api').createClient(),
     express = require('express'),
+    request = require('request'),
     fs = require('fs'),
+    async = require('async'),
     app = express(),
     clients = {},
     port = process.env.PORT || 3000,
-    filter,
-    seed_search,
-    seed_count;
-
-filter = {
-  // 'follow' : '1254449029'
-  'track' : 'leplace,leplacebcn,leplacelive,srframes'
-};
-seed_search = "leplacebcn";
-seed_count = 15;
+    search = "leplace OR leplacebcb OR 57party",
+    track = 'leplace,leplacebcb,57party';
 
 client.setAuth(
-  'Fcs3fjPDs7w5JcjxGtOMQ', //consumer_key
-  'NBQUvtoZeos6Y4T6mHXadr27S2vgCh98VJBqR7pAB4A', //consumer_secret
-  '115786338-jJoMMfQB0Qks2eeUbMgxDgd4wgkHI7H75ApULIRB', // access_token_key
-  '6p9jWQvGEv5sCVstxoFZIqeOzS4S2bzvnbuhVy8HlU' // access_token_secret
+  //consumer_key
+  //consumer_secret
+  // access_token_key
+  // access_token_secret
 );
 
 client.get('account/verify_credentials', { skip_status: true }, function (user, error, status) {
@@ -31,18 +25,12 @@ client.get('account/verify_credentials', { skip_status: true }, function (user, 
   }
 });
 
-client.stream('statuses/filter', { track: '#leplacetest' }, function (json) {
+client.stream('statuses/filter', { track: track }, function (json) {
   var tweet = JSON.parse(json);
   if (tweet.text && tweet.user) {
-    console.log(tweet.user.screen_name + ': "' + tweet.text + '"');
+    handleNewTweet(tweet);
   }
 });
-
-
-// twit.stream('statuses/filter', filter, function(stream) {
-//   stream.on('data', handleTweet);
-//   stream.on('error', handleError);
-// });
 
 // configure express
 app.configure(function () {
@@ -60,39 +48,26 @@ app.configure('production', function () {
 });
 
 
-// function bindStream (id, res) {
-//   clients[id] = res;
-// }
+function bindStream (id, res) {
+  clients[id] = res;
+}
 
-// function unbindStream(id) {
-//   delete clients[id];
-// }
+function unbindStream(id) {
+  delete clients[id];
+}
 
 function largeProfileImg(url) {
-  return url.replace('_normal.png', '.png');
+  return url.replace('_normal.', '.');
 }
 
-function handleTweet(data) {
-  console.log('@' + data.user.screen_name + ' (' + data.user.screen_name + ')');
-  console.log(data.text);
-
-  var client_data = {
-    id: data.id,
-    username: data.user.screen_name,
-    profile_image_url: largeProfileImg(data.user.profile_image_url),
-    text: data.text,
-    photo_url: getPhotoUrl(data),
-    time: data.created_at
-  };
-
-  Object.keys(clients).forEach(function (id) {
-    sendData(id, client_data);
+function handleNewTweet(tweet) {
+  console.log('@' + tweet.user.screen_name + ' : "' + tweet.text + '"');
+  extractData(tweet, function (error, data) {
+    Object.keys(clients).forEach(function (id) {
+      sendData(id, data);
+    });
   });
 }
-
-// function handleError(error, code) {
-//   console.warn("error: " + error + ": " + code);
-// }
 
 function getPhotoUrl(data) {
   if (!data.entities.media || !data.entities.media.length) return null;
@@ -100,61 +75,81 @@ function getPhotoUrl(data) {
   return data.entities.media[0].media_url;
 }
 
+function extractData(tweet, callback) {
 
-// function sendData(id, data) {
-//   var res = clients[id];
-//   console.log('sending', id, data);
+  var link_regex, image_regex, link_match, data;
 
-//   res.write('id: ' + id + '\n');
-//   res.write('event: data\n');
-//   res.write('data: ' + JSON.stringify(data).toString('utf8') + '\n\n');
-// }
+  data = {
+    id: tweet.id,
+    username: tweet.user.screen_name,
+    profile_image_url: largeProfileImg(tweet.user.profile_image_url),
+    text: tweet.text,
+    photo_url: getPhotoUrl(tweet),
+    time: tweet.created_at
+  };
 
+  if (tweet.source.match('Instagram')) {
+    link_regex = /(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?/;
+    image_regex = /og:image"\scontent="([^"]+)"/igm;
+    link_match = link_regex.exec(tweet.text);
 
-
-function prepareSeedData(data) {
-  return data.statuses.map(function (tweet) {
-    return {
-      id: tweet.id,
-      username: tweet.user.screen_name,
-      profile_image_url: largeProfileImg(tweet.user.profile_image_url),
-      text: tweet.text,
-      photo_url: getPhotoUrl(tweet),
-      time: tweet.created_at
-    };
-  });
+    if (link_match && link_match[0]) {
+      request(link_match[0], function (error, response, body) {
+        if (!error && response.statusCode === 200) {
+          data.photo_url = image_regex.exec(body)[1];
+        }
+        callback(null, data);
+      });
+    } else {
+      callback(null, data);
+    }
+  } else {
+    callback(null, data);
+  }
 }
 
+function sendData(id, data) {
+  var res = clients[id];
+  console.log('sending', id, data);
+
+  res.write('id: ' + id + '\n');
+  res.write('event: data\n');
+  res.write('data: ' + JSON.stringify(data).toString('utf8') + '\n\n');
+}
 
 
 app.get('/', function (req, res) {
   res.redirect('/index.html');
 });
 
-// app.get('/stream', function (req, res) {
-//   var id = (new Date()).getTime().toString();
-//   console.log('client connected to /stream ');
+app.get('/stream', function (req, res) {
+  var id = (new Date()).getTime().toString();
+  console.log('client connected to /stream ', id);
 
-//   res.header('Content-Type', 'text/event-stream');
-//   res.header('Cache-Control', 'no-cache');
-//   res.header('Connection', 'keep-alive');
+  res.header('Content-Type', 'text/event-stream');
+  res.header('Cache-Control', 'no-cache');
+  res.header('Connection', 'keep-alive');
 
-//   bindStream(id, res);
-//   console.log('clients:', Object.keys(clients));
-//   res.on('close', function () {
-//     unbindStream(id);
-//   });
-// });
+  bindStream(id, res);
+  console.log('clients:', Object.keys(clients));
+  res.on('close', function () {
+    unbindStream(id);
+  });
+});
 
 app.get('/seed', function (req, res) {
-
-  client.get('search/tweets', {q: 'leplacetest'}, function (json, error) {
+  client.get('search/tweets', {q: search}, function (json, error) {
     if (error) {
       res.send(error);
     } else {
-      var data = prepareSeedData(json);
-      res.header('Content-Type', 'text/json');
-      res.send(JSON.stringify(data));
+      async.map(json.statuses, extractData, function (error, results) {
+        if (error) {
+          res.send('error loading seed: ' + JSON.stringify(error));
+        } else {
+          res.header('Content-Type', 'text/json');
+          res.send(JSON.stringify(results));
+        }
+      });
     }
   });
 });
